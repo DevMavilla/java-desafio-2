@@ -11,6 +11,7 @@ public class Tarefa {
     private int hour;
     private int minute;
     private int id;
+    private boolean concluded;
 
     //Constructor
     public Tarefa(String task, String description, int hour, int minute, int id) {
@@ -19,6 +20,7 @@ public class Tarefa {
         this.description = description;
         this.minute = minute;
         this.id = id;
+        this.concluded = false;
     }
 
 
@@ -42,7 +44,14 @@ public class Tarefa {
     public int getId() {
         return id;
     }
+    //Getter concluded
+    public boolean isConcluded() {
+        return concluded;
+    }
 
+    public void setConcluded(boolean concluded) {
+        this.concluded = concluded;
+    }
 
     //Método para exibir tarefa formatada
     public void showTasks(){
@@ -50,6 +59,8 @@ public class Tarefa {
         System.out.println("- Disciplina: " + task);
         System.out.println("- Descição: " + description);
         System.out.println("- Tempo estimado: " + hour + ":" + minute);
+        System.out.println("- Identificador da tarefa:" + id);
+        System.out.println("- Concluída: " + (concluded ? "sim" : "não"));
     }
 
 }
