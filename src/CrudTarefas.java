@@ -7,6 +7,7 @@ import java.io.*;
 public class CrudTarefas {
 
     static ArrayList<Tarefa> tarefas = new ArrayList<>();
+    
     static Scanner userEntrance = new Scanner(System.in);
 
     static final String TASKS_FILE = "tasks.csv";
