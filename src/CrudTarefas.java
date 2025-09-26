@@ -7,7 +7,7 @@ import java.io.*;
 public class CrudTarefas {
 
     static ArrayList<Tarefa> tarefas = new ArrayList<>();
-    
+
     static Scanner userEntrance = new Scanner(System.in);
 
     static final String TASKS_FILE = "tasks.csv";
@@ -19,14 +19,21 @@ public class CrudTarefas {
     }
 
     // utilitário para ler um inteiro com validação e prompt
-    private static int readInt(String prompt) {
+    private static int readInt(String prompt, int min, int max) {
+        int value;
         while (true) {
-            System.out.print(prompt);
-            String line = userEntrance.nextLine().trim();
             try {
-                return Integer.parseInt(line);
-            } catch (NumberFormatException e) {
-                System.out.println("[ERRO] Entrada inválida. Digite apenas números (ex.: 1, 42). Tente novamente.");
+                System.out.println(prompt);
+                value = userEntrance.nextInt();
+                userEntrance.nextLine();
+                if (value < min || value > max) {
+                    System.out.println("[ERRO] Digite um valor entre " + min + " e " + max + ".");
+                } else {
+                    return value;
+                }
+            } catch (Exception e) {
+                System.out.println("[ERRO] Entrada inválida. Digite um número inteiro.");
+                userEntrance.nextLine();
             }
         }
     }
@@ -39,8 +46,8 @@ public class CrudTarefas {
         String description = userEntrance.nextLine();
 
         // Ler horas/minutos com validação
-        int hour = readInt("Tempo estimado (horas): ");
-        int minute = readInt("Tempo estimado (minutos): ");
+        int hour = readInt("Tempo estimado (horas: ", 0, 24);
+        int minute = readInt("Tempo estimado (minutos): ", 0, 59);
 
         // Opção: permitir ID manual ou gerar automaticamente
         System.out.print("Deseja definir um ID manual? (s/N): ");
@@ -48,7 +55,7 @@ public class CrudTarefas {
         int id;
         if (resposta.equals("s") || resposta.equals("sim")) {
             // ler id manual validado
-            id = readInt("Defina um número como identificador: ");
+            id = readInt("Defina um número como identificador: ", 0, 59);
             if (findTaskById(id) != null) {
                 System.out.println("[ERRO] Já existe uma tarefa com esse ID. Escolha outro ID.");
                 return;
@@ -79,6 +86,7 @@ public class CrudTarefas {
             System.out.println("2 - Listar tarefas");
             System.out.println("3 - Marcar tarefa concluída");
             System.out.println("4 - Resumo por disciplina");
+            System.out.println("5 - Remover tarefa");
             System.out.println("0 - Sair");
             System.out.print("Escolha uma opção: ");
             option = userEntrance.nextInt();
@@ -96,6 +104,9 @@ public class CrudTarefas {
                     break;
                 case 4:
                     summaryByDiscipline();
+                    break;
+                case 5:
+                    deleteTask();
                     break;
                 case 0:
                     System.out.println("Saindo...");
@@ -188,18 +199,58 @@ public class CrudTarefas {
                 + " | Total: " + (maxTimeMinutes / 60) + "h " + (maxTimeMinutes % 60) + "min");
     }
 
+    public static void deleteTask(){
+        if(tarefas.isEmpty()){
+            System.out.println("Não há tarefas cadastradas para remover");
+            return;
+        }
+
+        System.out.println("Tarefas cadastradas:");
+        for (Tarefa t: tarefas){
+            System.out.println("id: " + t.getId() + " | Disciplina: " + t.getTask() + " | Concluída: " + (t.isConcluded() ? "sim" : "não"));
+        }
+        System.out.println("Digite o ID da tarefa que deseja remover: ");
+        int id = userEntrance.nextInt();
+        userEntrance.nextLine();
+
+        Tarefa tarefaParaRemover = findTaskById(id);
+        if (tarefaParaRemover != null) {
+            tarefas.remove(tarefaParaRemover);
+            System.out.println("[CHECK] Tarefa removida com sucesso ✔");
+            saveTasksToFile();
+        }else {
+            System.out.println("[ERRO] Nenhuma tarefa encontrada com esse ID.");
+        }
+    }
+
     // ---------------------------
     // PERSISTÊNCIA SIMPLES (CSV com ';' como separador)
     // ---------------------------
 
     public static void saveTasksToFile() {
+        File original = new File(TASKS_FILE);
+        if (original.exists()) {
+            File backup = new File(TASKS_FILE + ".bak");
+            try (InputStream in = new FileInputStream(original);
+                 OutputStream out = new FileOutputStream(backup)) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, length);
+                }
+            } catch (IOException e) {
+                System.out.println("[ERRO] Falha ao criar backup: " + e.getMessage());
+            }
+        }
+
+        //Salva o CSV criptografado
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASKS_FILE))) {
             for (Tarefa t : tarefas) {
                 String safeTask = t.getTask().replace(";", ",").replace("\n", " ");
                 String safeDesc = t.getDescription().replace(";", ",").replace("\n", " ");
-                String line = String.format("%s;%s;%d;%d;%d;%b",
-                        safeTask, safeDesc, t.getHour(), t.getMinute(), t.getId(), t.isConcluded());
-                writer.write(line);
+                String line = String.format("%s;%s;%d;%d;%d;%b", safeTask, safeDesc, t.getHour(), t.getMinute(), t.getId(), t.isConcluded());
+                String encryptedLine = xorEncryptDecrypt(line);
+                writer.write(encryptedLine);
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -209,15 +260,15 @@ public class CrudTarefas {
 
     public static void loadTasksFromFile() {
         File f = new File(TASKS_FILE);
-        if (!f.exists()) {
-            return;
-        }
+        if (!f.exists()) return;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(f))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                String decryptedLine = xorEncryptDecrypt(line);
                 String[] parts = line.split(";", -1);
                 if (parts.length < 6) continue;
+
                 String task = parts[0];
                 String description = parts[1];
                 int hour = Integer.parseInt(parts[2]);
@@ -239,5 +290,15 @@ public class CrudTarefas {
             if (t.getId() == id) return t;
         }
         return null;
+    }
+
+
+    private static String xorEncryptDecrypt(String input) {
+        char key = 'K';
+        char[] chars = input.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] =(char)(chars[i] ^ key);
+        }
+        return new String(chars);
     }
 }
