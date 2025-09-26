@@ -15,10 +15,10 @@ public class CrudTarefas {
     public static void main(String[] args) {
         loadTasksFromFile();
         menu();
-        saveTasksToFile(); // salva ao sair como redundância
+        saveTasksToFile(); 
     }
 
-    // utilitário para ler um inteiro com validação e prompt
+   
     private static int readInt(String prompt, int min, int max) {
         int value;
         while (true) {
@@ -45,23 +45,23 @@ public class CrudTarefas {
         System.out.print("Descrição da atividade: ");
         String description = userEntrance.nextLine();
 
-        // Ler horas/minutos com validação
+        
         int hour = readInt("Tempo estimado (horas: ", 0, 24);
         int minute = readInt("Tempo estimado (minutos): ", 0, 59);
 
-        // Opção: permitir ID manual ou gerar automaticamente
+       
         System.out.print("Deseja definir um ID manual? (s/N): ");
         String resposta = userEntrance.nextLine().trim().toLowerCase();
         int id;
         if (resposta.equals("s") || resposta.equals("sim")) {
-            // ler id manual validado
+            
             id = readInt("Defina um número como identificador: ", 0, 59);
             if (findTaskById(id) != null) {
                 System.out.println("[ERRO] Já existe uma tarefa com esse ID. Escolha outro ID.");
                 return;
             }
         } else {
-            // gerar ID automático simples: achar maior id e +1
+            
             int maxId = 0;
             for (Tarefa t : tarefas) if (t.getId() > maxId) maxId = t.getId();
             id = maxId + 1;
@@ -73,7 +73,7 @@ public class CrudTarefas {
         novaTarefa.showTasks();
         System.out.println("[CHECK] Tarefa adicionada corretamente ✔");
 
-        // salva no arquivo após adicionar
+        
         saveTasksToFile();
     }
 
@@ -136,7 +136,7 @@ public class CrudTarefas {
             return;
         }
 
-        // mostra resumo curto para o usuário escolher
+        
         for (Tarefa t : tarefas) {
             System.out.println("id: " + t.getId()
                     + " | Disciplina: " + t.getTask()
@@ -158,7 +158,7 @@ public class CrudTarefas {
         } else {
             encontrada.setConcluded(true);
             System.out.println("[CHECK] Tarefa marcada como concluída ✔");
-            // mostra lista atualizada e salva
+            
             listTasks();
             saveTasksToFile();
         }
@@ -223,9 +223,7 @@ public class CrudTarefas {
         }
     }
 
-    // ---------------------------
-    // PERSISTÊNCIA SIMPLES (CSV com ';' como separador)
-    // ---------------------------
+   
 
     public static void saveTasksToFile() {
         File original = new File(TASKS_FILE);
@@ -243,7 +241,7 @@ public class CrudTarefas {
             }
         }
 
-        //Salva o CSV criptografado
+        
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(TASKS_FILE))) {
             for (Tarefa t : tarefas) {
                 String safeTask = t.getTask().replace(";", ",").replace("\n", " ");
