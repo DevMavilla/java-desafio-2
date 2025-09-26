@@ -74,6 +74,29 @@ public class CrudTarefas {
         } while (option != 0);
     }
 
+    public static void addTask() {
+        System.out.print("Nome da disciplina: ");
+        String task = userEntrance.nextLine();
+
+        System.out.print("Descrição da atividade: ");
+        String description = userEntrance.nextLine();
+
+        System.out.print("Tempo estimado (horas): ");
+        int hour = userEntrance.nextInt();
+
+        System.out.print("Tempo estimado (minutos): ");
+        int minute = userEntrance.nextInt();
+
+        System.out.print("Defina um número como identificador: ");
+        int id = userEntrance.nextInt();
+        userEntrance.nextLine(); // consumir a quebra de linha
+
+        Tarefa novaTarefa = new Tarefa(task, description, hour, minute, id);
+        tarefas.add(novaTarefa);
+        novaTarefa.showTasks();
+        System.out.println("[CHECK] Tarefa adicionada corretamente ✔");
+    }
+
 
     public  static void listTasks() {
             if (tarefas.size() == 0){
